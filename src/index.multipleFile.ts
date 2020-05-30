@@ -74,7 +74,7 @@ export async function codegen(params: ISwaggerOptions) {
   let _allModel = Object.values(models)
   let _allEnum = Object.values(enums)
   // TODO: next next next time
-  // if (options.multipleFileMode) {
+  //if (options.multipleFileMode) {
   if (true) {
 
     Object.entries(requestCodegen(swaggerSource.paths, isV3, options)).forEach(([className, requests]) => {
@@ -100,13 +100,13 @@ export async function codegen(params: ISwaggerOptions) {
 
 
     const { models, enums } = definitionsCodeGen(swaggerSource.definitions)
-    let defsString = ''
+    const defsStrings: string[] = [];
+    const fileDir = path.join(options.outputDir || '', 'definitions')
     Object.values(enums).forEach(item => {
       const text = item.value ? enumTemplate(item.value.name, item.value.enumProps, 'Enum') : item.content || ''
 
-      // const fileDir = path.join(options.outputDir || '', 'definitions')
-      // writeFile(fileDir, item.name + '.ts', format(text, options))
-      defsString += text
+      writeFile(fileDir, item.name + '.ts', format(text, options));
+      defsStrings.push(`export * from './${item.name}'`);
     })
 
     Object.values(models).forEach(item => {
@@ -121,12 +121,12 @@ export async function codegen(params: ISwaggerOptions) {
             options.useClassTransformer,
             options.generateValidationModel
           )
-      // const fileDir = path.join(options.outputDir || '', 'definitions')
-      // writeFile(fileDir, item.name + '.ts', format(text, options))
-      defsString += text
+      writeFile(fileDir, item.name + '.ts', format(text, options))
+      defsStrings.push(`export * from './${item.name}'`);
     })
-    defsString = apiSource + defsString
-    writeFile(options.outputDir || '', 'index.defs.ts', format(defsString, options))
+    // defsString = apiSource + defsString
+    //  writeFile(options.outputDir || '', 'index.defs.ts', format(defsString, options))
+    writeFile(fileDir, 'index.ts', format(defsStrings.join("\n"), options))
 
   } else if (options.include && options.include.length > 0) {
     // codegenInclude(apiSource, options, requestClass, models, enums)

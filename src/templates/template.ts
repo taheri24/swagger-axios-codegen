@@ -73,6 +73,11 @@ export function classTemplate(
     constructor(data: (undefined | any) = {}){
         ${props.map(p => classConstructorTemplate(p.name)).join('')}
     }
+    toJSON(){
+      return {
+        ${props.map(({ name }) => `'${name}':this['${name}']`).join(',')}
+      }
+    }
     ${generateValidationModel ? classValidationModelTemplate(props) : ''}
   }
   `
@@ -145,11 +150,12 @@ export function classTransformTemplate(type: string, format: string, isType: boo
 
 /** 类属性模板 */
 export function classConstructorTemplate(name: string) {
-  return `this['${name}'] = data['${name}'];\n`
+  return `this['${name}'] = data['${camelcase(name)}'];\n`
 }
 
 /** 枚举 */
 export function enumTemplate(name: string, enumString: string, prefix?: string) {
+  if (enumString.split('|').some(s => /^[0-9]$/.test(s))) return `export type ${name}=number`;
   return `
   export enum ${name}{
     ${enumString}
@@ -231,7 +237,7 @@ ${options.useStaticMethod ? 'static' : ''} ${camelcase(
 /** serviceTemplate */
 export function serviceTemplate(name: string, body: string, imports: string[] = null) {
   // add base imports
-  let mappedImports = !imports ? '' : `import { ${imports.join(',')}, } from './index.defs'\n`
+  let mappedImports = !imports ? '' : `import { ${imports.join(',')}, } from './definitions'\n`
 
   // }
 

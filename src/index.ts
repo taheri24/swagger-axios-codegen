@@ -103,9 +103,14 @@ export async function codegen(params: ISwaggerOptions) {
       writeFile(options.outputDir || '', className + 'Service.ts', format(text, options))
     })
 
-    let defsString = ''
+    const defsStrings: string[] = [];
+    const fileDir = path.join(options.outputDir || '', 'definitions')
+    Object.values(enums).forEach(item => {
+      const text = item.value ? enumTemplate(item.value.name, item.value.enumProps, 'Enum') : item.content || ''
 
-
+      writeFile(fileDir, item.name + '.ts', format(text, options));
+      defsStrings.push(`export * from './${item.name}'`);
+    })
 
     Object.values(models).forEach(item => {
       const text =
@@ -119,31 +124,12 @@ export async function codegen(params: ISwaggerOptions) {
             options.useClassTransformer,
             options.generateValidationModel
           )
-      // const fileDir = path.join(options.outputDir || '', 'definitions')
-      // writeFile(fileDir, item.name + '.ts', format(text, options))
-      defsString += text
+      writeFile(fileDir, item.name + '.ts', format(text, options))
+      defsStrings.push(`export * from './${item.name}'`);
     })
-
-    Object.values(enums).forEach(item => {
-      // const text = item.value ? enumTemplate(item.value.name, item.value.enumProps, 'Enum') : item.content || ''
-
-      let text = ''
-      if (item.value) {
-        if (item.value.type == 'string') {
-          text = enumTemplate(item.value.name, item.value.enumProps, options.enumNamePrefix)
-        } else {
-          text = typeTemplate(item.value.name, item.value.enumProps, options.enumNamePrefix)
-        }
-      } else {
-        text = item.content || ''
-      }
-      defsString += text
-
-    })
-
-
-    defsString = apiSource + defsString
-    writeFile(options.outputDir || '', 'index.defs.ts', format(defsString, options))
+    // defsString = apiSource + defsString
+    //  writeFile(options.outputDir || '', 'index.defs.ts', format(defsString, options))
+    writeFile(fileDir, 'index.ts', format(defsStrings.join("\n"), options))
 
   } else if (options.include && options.include.length > 0) {
     // codegenInclude(apiSource, options, requestClass, models, enums)
